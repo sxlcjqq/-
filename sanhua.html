@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+    <style>
+        .submitGif {
+            width: 402px;
+            height: 702px;
+            box-shadow: 0 0 5px rgb(65, 120, 250);
+            margin:20px auto;
+        }
+
+        button {
+            margin: 20px auto 0;
+            height: 32px;
+            cursor: pointer;
+            z-index: 9;
+            width: 100px;
+            display: block;
+            color:#ffffff;
+            background:rgb(65, 120, 250);
+            border:none;
+            border-radius: 5px;
+            outline: none;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="submitGif">
+        <canvas id="canvas"></canvas>
+        <button onclick="init()">点击撒花</button>
+    </div>
+    <script>
+        var canvas = null, ctx = null, timeout1 = null, timeout2 = null, timeout3 = null, pieceList = [], textList = [], color = '65,130,250';
+        var uwtime = 0;//上升次数
+        var dwtime = 0;//下降次数
+        var canvasData = {
+            width: 400,
+            height: 600,
+            top: 0,
+            left: 0
+        }
+        var text = '+3'
+        mounted()
+        init()
+        function mounted() {
+            canvas = document.getElementById('canvas');
+            canvas.height = canvasData.height;
+            canvas.width = canvasData.width;
+            ctx = canvas.getContext("2d");
+        }
+        function init() {
+            clearTimeout(timeout1);
+            clearTimeout(timeout2);
+            clearTimeout(timeout3);
+            uwtime = 40;
+            dwtime = 0;
+            pieceList = [];
+            textList = [];
+            addPiece(60);
+            drowPiece();
+            movePiece();
+        }
+        function initPiece(x, y, w, h, o, ex, ey, c) {
+            /**
+             * x,y:位置
+             * w,h:半截大小
+             * o:透明度
+             * ex:end x
+             * ey:end y
+             */
+            var dd = {
+                x: x,
+                y: y,
+                w: w,
+                h: h,
+                o: o,
+                ex: x + ex * (getRandom(1, 0) >= 0.5 ? 1 : -1),
+                ey: y + ey * -1,
+                c: c
+            };
+            pieceList.push(dd);
+        }
+        function initText(x, y, fs, o) {
+            /**
+             * x,y:位置
+             * fs:font-size
+             * o:透明度
+             * i:index
+             */
+            var dd = {
+                x: x,
+                y: y,
+                fs: fs,
+                o: o
+            };
+            textList.push(dd);
+        }
+        function addPiece(num) {
+            for (var i = 0; i < num; i++) {
+                initPiece(
+                    200,
+                    600,
+                    getRandom(3, 3),
+                    getRandom(2, 4),
+                    getRandom(0.9, 0.1),
+                    getRandom(190, 10),
+                    getRandom(300, 200),
+                    getRandom(90, 20) + ',' + getRandom(150, 50) + ',250'
+                );
+            }
+            if (text) {
+                setTimeout(() => {
+                    initText(
+                        195,
+                        600,
+                        12,
+                        1
+                    );
+                }, 100);
+                setTimeout(() => {
+                    initText(
+                        195,
+                        600,
+                        12,
+                        1
+                    );
+                }, 250);
+                setTimeout(() => {
+                    initText(
+                        195,
+                        600,
+                        12,
+                        1
+                    );
+                }, 400);
+            }
+        }
+        function drowText() {
+            textList.forEach(element => {
+                if (element.y > 0) {
+                    if (element.y < 600) {
+                        if (element.fs <= 40) {
+                            element.fs += 0.5;
+                        }
+                        if (element.fs > 40) {
+                            element.o -= 0.02;
+                        }
+                    }
+                    element.y -= 1 + element.fs / 18;
+                    ctx.font = element.fs + "px Georgia";
+                    ctx.fillStyle = "rgba(" + color + "," + element.o + ")";
+                    ctx.fillText(
+                        text,
+                        element.x - (12 + element.fs) / 2,
+                        element.y
+                    );
+                }
+            });
+        }
+        function drowPiece() {
+            pieceList.forEach(element => {
+                ctx.beginPath();
+                ctx.moveTo(element.x, element.y);
+                ctx.lineTo(element.x + element.w, element.y + element.h);
+                ctx.lineTo(element.x, element.y + 2 * element.h);
+                ctx.lineTo(element.x - element.w, element.y + element.h);
+                ctx.lineTo(element.x, element.y);
+                ctx.fillStyle = "rgba(" + element.c + "," + element.o + ")";
+                ctx.fill(); //填充
+                // ctx.stroke(); //画线
+            });
+            if (text) {
+                drowText();
+            }
+        }
+        function getRandom(num, v) {
+            return Math.random() * num + v;
+        }
+        function movePiece() {
+            uwtime--;
+            ctx.clearRect(0, 0, canvasData.width, canvasData.height);
+            pieceList.forEach(element => {
+                if (element.uw && element.uh) {
+                } else {
+                    //求  uw、uh加速度，t时间间隔,间距 = g/2(t^2)
+                    element.uw = ((element.ex - element.x) * 2) / 0.5 / 0.5;
+                    element.uh = ((element.ey - element.y) * 2) / 0.5 / 0.5;
+                    element.t = 0.5 / 40;
+                }
+                ctx.beginPath();
+                element.x +=
+                    (element.uw / 2) *
+                    (2 * uwtime * element.t + element.t) *
+                    element.t;
+                element.y +=
+                    (element.uh / 2) *
+                    (2 * uwtime * element.t + element.t) *
+                    element.t;
+                ctx.moveTo(element.x, element.y);
+                ctx.lineTo(
+                    element.x + element.w + getRandom(4, -2),
+                    element.y + element.h + getRandom(4, -2)
+                );
+                ctx.lineTo(element.x, element.y + 2 * element.h);
+                ctx.lineTo(
+                    element.x - element.w + getRandom(4, -2),
+                    element.y + element.h + getRandom(4, -2)
+                );
+                ctx.lineTo(element.x, element.y);
+                ctx.fillStyle = "rgba(" + element.c + "," + element.o + ")";
+                ctx.fill(); //填充
+                // ctx.restore();
+                // ctx.stroke(); //画线
+            });
+
+            if (text) {
+                drowText();
+            }
+            if (uwtime >= 0) {
+                timeout2 = setTimeout(() => {
+                    movePiece();
+                }, 10);
+            } else {
+                downPiece();
+            }
+        }
+        function downPiece() {
+            dwtime++;
+            ctx.clearRect(0, 0, canvasData.width, canvasData.height);
+
+            if (text) {
+                drowText();
+            }
+            pieceList.forEach(element => {
+                if (element.dh) {
+                } else {
+                    //确定间隔
+                    element.dh = (140 * 2) / 1.2 / 1.2;
+                    element.dt = 1 / 50;
+                    element.rotate = getRandom(5, 3);
+                    element.dx = getRandom(1.2, -0.6);
+                }
+                ctx.save(); //保存状态
+                element.x += element.dx;
+                element.o -= 0.008
+                element.y +=
+                    (element.dh / 2) *
+                    (2 * dwtime * element.dt + element.dt) *
+                    element.dt;
+                ctx.translate(element.x, element.y + element.h); //设置画布上的(0,0)位置，也就是旋转的中心点
+                ctx.rotate((element.rotate * dwtime * Math.PI) / 180);
+
+                ctx.translate(-element.x, -element.y - element.h); //设置画布上的(0,0)位置，也就是旋转的中心点
+                ctx.beginPath();
+                ctx.moveTo(element.x, element.y);
+                ctx.lineTo(
+                    element.x + element.w + getRandom(2, -1),
+                    element.y + element.h + getRandom(2, -1)
+                );
+                ctx.lineTo(element.x, element.y + 2 * element.h);
+                ctx.lineTo(
+                    element.x - element.w - getRandom(2, -1),
+                    element.y + element.h + getRandom(2, -1)
+                );
+                ctx.lineTo(element.x, element.y);
+                ctx.fillStyle = "rgba(" + element.c + "," + element.o + ")";
+                ctx.fill(); //填充
+                ctx.restore(); //恢复状态
+                // ctx.restore();
+                // ctx.stroke(); //画线t);
+            });
+            if (dwtime <= 130) {
+                timeout3 = setTimeout(() => {
+                    downPiece();
+                }, 20);
+            } else {
+                ctx.clearRect(0, 0, canvasData.width, canvasData.height);
+            }
+        }
+    </script>
+</body>
+
+</html>
