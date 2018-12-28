@@ -1,5 +1,6 @@
 #!/bin/bash
 cd /Volumes/lalala/项目/- 
+git status
 git add .
 git commit -m 'update'
 git pull origin master
