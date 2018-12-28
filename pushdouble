@@ -2,5 +2,7 @@
 cd /Volumes/lalala/项目/- 
 git add .
 git commit -m 'update'
+git pull origin master
+echo '拉取成功'
 git push origin master
 echo '提交成功'
